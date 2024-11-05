@@ -801,7 +801,19 @@ class RadosJSON:
                 raise ExecutionFailureException(
                     f"invalid endpoint: {monitoring_endpoint}"
                 )
-            monitoring_endpoint_ip_list = parsed_endpoint.hostname
+
+            cmd_json = {"prefix": "mgr metadata", "format": "json"}
+            ret_val, json_out, err_msg = self._common_cmd_json_gen(cmd_json)
+            # if there is an unsuccessful attempt,
+            if ret_val != 0 or len(json_out) == 0:
+                raise ExecutionFailureException(
+                    "'mgr services' command failed.\n"
+                    f"Error: {err_msg if ret_val != 0 else self.EMPTY_OUTPUT_LIST}"
+                )
+            monitoring_endpoints = []
+            for monitoring in json_out:
+                monitoring_endpoints.append(monitoring.get("addr"))
+            monitoring_endpoint_ip_list = ",".join(monitoring_endpoints)
             if not monitoring_endpoint_port:
                 monitoring_endpoint_port = str(parsed_endpoint.port)
 
